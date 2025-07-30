@@ -7,7 +7,7 @@ PRODUCT_URLS = [
     "https://www.ispo.com.tw/ho1162013bwht.html",
     "https://www.ispo.com.tw/ho1162013bblc.html",
 ]
-SIZES = ["US8.5", "US9"]
+SIZES = ["US8.5", "US9", "US10"]
 
 def notify_via_telegram(size, url):
     token = os.getenv("TELEGRAM_TOKEN")
