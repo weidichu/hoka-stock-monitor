@@ -13,7 +13,7 @@ PRODUCT_URLS = [
 ]
 
 # —— 只檢查這兩個尺寸 —— 
-SIZES = ["US8.5", "US9"]
+SIZES = ["US8.5", "US9", "US10"]
 
 def notify_via_telegram(size: str, url: str):
     """使用 Telegram Bot API 發送補貨通知"""
