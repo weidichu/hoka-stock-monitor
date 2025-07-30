@@ -13,7 +13,7 @@ PRODUCT_URLS = [
 ]
 
 # —— 只檢查這兩個尺寸 —— 
-SIZES = ["US8.5", "US9", "US10"]
+SIZES = ["US8.5", "US9"]
 
 def notify_via_telegram(size: str, url: str):
     """使用 Telegram Bot API 發送補貨通知"""
@@ -45,27 +45,34 @@ async def check_stock():
         )
 
         for url in PRODUCT_URLS:
-            # 1. 開啟頁面並等所有網路請求完成
+            # 1. 開啟頁面並等所有 JS 請求結束
             await page.goto(url, timeout=60000)
             await page.wait_for_load_state("networkidle")
-            # 2. 等任意一個尺寸按鈕載入完畢
+            # 2. 等至少一個尺寸按鈕現身，確保整個尺碼區塊載入完成
             await page.wait_for_selector("div.swatch-option", timeout=30000)
 
-            # 3. 依序檢查 US8.5 與 US9
+            # 3. 只對 SIZES 裡的尺寸做檢查
             for size in SIZES:
                 sel     = f'div.swatch-option[data-option-label="{size}"]'
                 locator = page.locator(sel)
 
-                # 如果根本沒有這個尺寸，就跳過
+                # 3.1 欲檢查的尺寸不存在於頁面 → 跳過
                 if await locator.count() == 0:
-                    print(f"[跳過] {size} 不在 {url}")
+                    print(f"[跳過] {size} 不在此頁面 ({url})")
                     continue
 
-                # 如果存在且可見 (display:block)，才通知
+                # 3.2 如果有 class 標記為 disabled / sold-out / out-of-stock → 代表已售罄，跳過
+                class_attr = await locator.get_attribute("class") or ""
+                sold_out_class = ["disabled", "sold-out", "out-of-stock"]
+                if any(c in class_attr for c in sold_out_class):
+                    print(f"[已售罄] {size} 在此頁面顯示售完 ({url})")
+                    continue
+
+                # 3.3 最後再檢查 display 狀態（保險起見）
                 if await locator.is_visible():
                     notify_via_telegram(size, url)
                 else:
-                    print(f"[沒貨] {size} 在 {url} 顯示 none")
+                    print(f"[隱藏] {size} 在此頁面為 display:none ({url})")
 
         await browser.close()
 
